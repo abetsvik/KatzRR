@@ -37,7 +37,9 @@ KatzRRlo <- (RR)*exp(-1.96*sqrt(((1-phat1)/(n1*phat1))+((1-phat2)/(n2*phat2))))
 KatzRRhi <- (RR)*exp(1.96*sqrt(((1-phat1)/(n1*phat1))+((1-phat2)/(n2*phat2))))
 
 katz_RR <- function(x){
-  print(paste("RR =", format(RR, nsmall = 2),",", "95% CI", "(",format(KatzRRlo, nsmall = 2), "-", format(KatzRRhi, nsmall = 2),")"))
+  cat(paste("RR =", format(RR, nsmall = 2),",", "95% CI", "(",format(KatzRRlo, nsmall = 2), "-", format(KatzRRhi, nsmall = 2),")"), collapse = '\n')
 }
 katz_RR(x)
+
+# Output should look like ->     RR = 1.98 , 95% CI ( 0.663 - 5.90 ) 
 
