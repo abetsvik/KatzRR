@@ -1,4 +1,6 @@
 # Separate script for testing#
+# Student Abe Tsvik/CSR Mice - Body Weight/R_code/NYU Code - Abe/Notes.R #
+
 # Here, I hard coded values into a matrix then table, and function "Katz_RR" is fully functional and works properly, see example below #
 
 
