@@ -1,0 +1,138 @@
+library(dplyr)
+library(tidyverse)
+
+# Group mice by overweight status #
+# I chose to hard code weight cutoff instead of merging with centiles_x dataframe to save time #
+
+# Female #
+
+all_f <- BW %>% 
+  filter(Sex == "F", Week == "Week_15") %>% 
+  select(MouseID, Sex, Weight_g, BirthMode) %>%
+  mutate(Overweight = case_when(Weight_g > 44.5 ~ 'Overweight',
+                                Weight_g < 44.5 ~ 'Normal Weight')) 
+
+female_sum <- all_f %>% group_by(BirthMode, Overweight) %>%
+              summarise(n = n())
+
+              table_f <- table(all_f$BirthMode, all_f$Overweight)
+
+table_f <- table_f[, c(2,1)]
+
+overweight_f <- BW %>% 
+                filter(Sex == "F", Week == "Week_15", Weight_g > 44.5) %>% 
+                select(MouseID, Sex, Weight_g, BirthMode)
+
+normalweight_f <- BW %>% 
+                  filter(Sex == "F", Week == "Week_15", Weight_g < 44.5) %>% 
+                  select(MouseID, Sex, Weight_g, BirthMode) 
+
+# Male #
+
+all_m <- BW %>% 
+         filter(Sex == "M", Week == "Week_15") %>% 
+         select(MouseID, Sex, Weight_g, BirthMode) %>%
+         mutate(Overweight = case_when(Weight_g > 50.7 ~ 'Overweight',
+                                       Weight_g < 50.7 ~ 'Normal Weight')) 
+
+male_sum <- all_m %>% group_by(BirthMode, Overweight) %>%
+            summarise(n = n()) %>%
+            arrange(factor(BirthMode, levels = c("VD", "CS", "CSR", "VF")))
+
+            table_m <- table(all_m$BirthMode, all_m$Overweight) 
+
+table_m <- table_m[, c(2,1)]
+        
+overweight_m <- BW %>% 
+                filter(Sex == "M", Week == "Week_15", Weight_g > 50.7) %>% 
+                select(MouseID, Sex, Weight_g, BirthMode)
+
+normalweight_m <- BW %>% 
+                  filter(Sex == "M", Week == "Week_15", Weight_g < 50.7)  %>% 
+                  select(MouseID, Sex, Weight_g, BirthMode)
+
+# Calculate Katz RR for all groups #
+# Not working, see "Notes.R"  - issue with table_m #
+
+
+katz_RR <- function(KatzRRhi, KatzRRlo, RR){
+  return(paste("RR =", format(RR, nsmall = 2),",", "95% CI", "(",format(KatzRRlo), "-", format(KatzRRhi, nsmall= 2),")"))
+}
+
+list<-list()
+
+for (i in 1:3(table_m)){
+  print(i)
+  a <- table_m[i,1] %>% as.numeric
+  b <- table_m[i,2] %>% as.numeric
+  c <- table_m[4,1] %>% as.numeric
+  d <- table_m[4,2] %>% as.numeric
+  
+  n1 <- a+b
+  n2 <- c+d
+  phat1 <- a/(n1)
+  phat2 <- c/(n2)
+  
+  RR <- (phat1/phat2)
+  KatzRRlo <- (RR)*exp(-1.96*sqrt(((1-phat1)/(n1*phat1))+((1-phat2)/(n2*phat2))))
+  KatzRRhi <- (RR)*exp(1.96*sqrt(((1-phat1)/(n1*phat1))+((1-phat2)/(n2*phat2))))
+  
+  list[i]<-katz_RR(KatzRRhi, KatzRRlo, RR)
+  
+}
+a <- i[x,1] %>% as.numeric
+b <- table_m[x,2]
+
+
+
+# Males #
+
+NYU_m <- matrix(c(4, 7, 3, 2, 22, 16, 10, 14), ncol = 2)
+
+rownames(NYU_m) <- c("VD", "CS", "CSR", "VF")
+colnames(NYU_m) <- c("Normal Weight", "Overweight")
+
+NYU_m <- as.table(NYU_m)
+
+NYU_m
+
+# Test making Katz function #
+
+# Create loop #
+
+list<-list()
+  
+for (i in 2:nrow(NYU_m)){
+  print(i)
+  a <- NYU_m[i,1] %>% as.numeric
+  b <- NYU_m[i,2] %>% as.numeric
+  c <- NYU_m[1,1] %>% as.numeric
+  d <- NYU_m[1,2] %>% as.numeric
+  
+# Assign values to calculate RR and 95% CI #
+
+  n1 <- a+b
+  n2 <- c+d
+  phat1 <- a/(n1)
+  phat2 <- c/(n2)
+  
+  RR <- (phat1/phat2)
+  KatzRRlo <- (RR)*exp(-1.96*sqrt(((1-phat1)/(n1*phat1))+((1-phat2)/(n2*phat2))))
+  KatzRRhi <- (RR)*exp(1.96*sqrt(((1-phat1)/(n1*phat1))+((1-phat2)/(n2*phat2))))
+  
+  # Execute function #
+  
+  list[i-1]<-katz_RR(KatzRRhi, KatzRRlo, RR)
+  
+}
+a <- i[x,1] %>% as.numeric
+b <- NYU_m[x,2]
+
+
+list[1]
+list[2]
+list[3]
+
+# Output should look like this ->     RR = 1.978261 , 95% CI ( 0.663201 - 5.90095 ) 
+                                      RR = 1.50 , 95% CI ( 0.3924651 - 5.732994 )
+                                      RR = 0.8125 , 95% CI ( 0.1675166 - 3.94084 )
